@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+message ImagePointProto {
+  float u = 1;
+  float v = 2;
+}
+
+message ImageNormPointProto {
+  float u = 1;
+  float v = 2;
+}
+
+message MapPointProto {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message PoseProto {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float q_x = 4;
+  float q_y = 5;
+  float q_z = 6;
+  float q_w = 7;
+}
+message DescriptorsProto {
+   string bitset = 1;
+}
+
+
+message FrameProto {
+  
+  repeated ImagePointProto  image_points=1;
+  repeated ImageNormPointProto  image_norm_points=2;
+  repeated MapPointProto    map_points=3;
+  repeated DescriptorsProto descriptors = 4;
+  PoseProto frame_pose=5;
+  uint64  frame_id=6;
+  uint64  loop_index=7;
+
+}
+
+message MapProto {
+  repeated FrameProto frames=1;
+}
+

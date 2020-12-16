@@ -1,0 +1,56 @@
+%YAML:1.0
+
+
+image_width: 640
+image_height: 480
+fps: 60
+# device: "/dev/video1"
+device: 2
+set_camera: 0
+brightness: 0.5 #0.5
+contrast: 0.32 #0.32
+saturation: 0.64 #0.64
+hue :        0.50 #0.5
+rect: 0
+
+
+camera_matrix:  !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [292.5764, 0, 308.3347,
+         0, 292.8242, 210.6295,
+         0.000000, 0.000000, 1.000000]
+
+#k1,k2,p1,p2[,k3[,k4,k5,k6
+
+    # - [0.6116499] k1
+    # - [0.0542451] k2
+    # - [0]         p1
+    # - [0]         p2
+    # - [0.0003651929] k3
+    # - [0.9757085]   k4
+    # - [0.1845422]   k5
+    # - [0.00495729]  k6
+distortion_coefficients:  !!opencv-matrix
+  rows: 1
+  cols: 8
+  dt: d
+  data: [0.6116499, 0.0542451, 0.0, 0.0, 0.0003651929, 0.9757085, 0.1845422, 0.00495729]
+
+
+rectification_matrix:     !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [ 1.,  0.,  0.,
+          0.,  1.,  0.,
+          0.,  0.,  1.]
+          
+projection_matrix:          !!opencv-matrix
+  rows: 3 
+  cols: 4
+  dt: d
+  data: [292.5764, 0, 308.3347, 0.000000,
+         0, 292.8242, 210.6295, 0.000000,
+         0.000000, 0.000000, 1.000000, 0.000000]
