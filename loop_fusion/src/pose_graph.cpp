@@ -15,7 +15,7 @@ PoseGraph::PoseGraph() {
   posegraph_visualization = new CameraPoseVisualization(1.0, 0.0, 1.0, 1.0);
   posegraph_visualization->setScale(0.1);
   posegraph_visualization->setLineWidth(0.01);
-  earliest_loop_index = -1;  //上次回环上的id
+  earliest_loop_index = -1;  //最先回环上的id
   t_drift = Eigen::Vector3d(0, 0, 0);
   yaw_drift = 0;
   r_drift = Eigen::Matrix3d::Identity();
@@ -82,11 +82,11 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop) {
     addKeyFrameIntoVoc(cur_kf);  //不想检测回环则先将描述子添加到数据库
   }
   if (loop_index != -1) {  //检测到回环
-    // printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
+    printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
     KeyFrame* old_kf = getKeyFrame(loop_index);  //对应的关键帧
-
+    // assert(old_kf != NULL);
     if (cur_kf->findConnection(old_kf)) {  // pnp 成功,old 2d , cur 3d
-      if (earliest_loop_index > loop_index || earliest_loop_index == -1) earliest_loop_index = loop_index;
+      if (earliest_loop_index > loop_index || earliest_loop_index == -1) earliest_loop_index = loop_index; //加载帧默认loop_index=-1,这里设置为新加的入的帧
 
       Vector3d w_P_old, w_P_cur, vio_P_cur;
       Matrix3d w_R_old, w_R_cur, vio_R_cur;
@@ -132,7 +132,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop) {
       m_optimize_buf.lock();
       optimize_buf.push(cur_kf->index);  //放入buff中给优化器
       m_optimize_buf.unlock();
-    }
+    } 
   }
   m_keyframelist.lock();
   Vector3d P;
@@ -294,11 +294,11 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index) {
   TicToc t_query;
   db.query(keyframe->brief_descriptors, ret, 4, frame_index - 50);  //寻找4个最相似的帧 ,50帧之前的帧中找
   // printf("query time: %f", t_query.toc());
-  cout << "Searching for Image " << frame_index << ". " << ret << endl;
+  // cout << "Searching for Image " << frame_index << ". " << ret << endl;
 
   TicToc t_add;
-  //TODO youfang  不添加进数据库loop
-  // db.add(keyframe->brief_descriptors);  //将当前帧加入到数据库中
+  // TODO youfang  添加进数据库loop
+  if (ADD_DATA_BASE) db.add(keyframe->brief_descriptors);  //将当前帧加入到数据库中
   // printf("add feature time: %f", t_add.toc());
   // ret[0] is the nearest neighbour's score. threshold change with neighour score
   bool find_loop = false;
@@ -319,9 +319,12 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index) {
   }
   // a good match with its nerghbour
   if (ret.size() >= 1 && ret[0].Score > 0.05)  //最好的一帧相似性达到0.05进一步判断
+                                               // TODO sore
+                                               // if (ret.size() >= 1 && ret[0].Score > 0.020)  //最好的一帧相似性达到0.05进一步判断
     for (unsigned int i = 1; i < ret.size(); i++) {
       // if (ret[i].Score > ret[0].Score * 0.3)
       if (ret[i].Score > 0.015)  //书上介绍最好不要用固定的数值
+      // if (ret[i].Score > 0.005)  //书上介绍最好不要用固定的数值
       {
         find_loop = true;
         int tmp_index = ret[i].Id;
@@ -345,8 +348,10 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index) {
     int min_index = -1;
     for (unsigned int i = 0; i < ret.size(); i++)  // 4帧最相近的关键帧
     {
-      if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.015)) min_index = ret[i].Id;
+      // if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.015)) min_index = ret[i].Id;
+      if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.005)) min_index = ret[i].Id;
     }
+    // std::cout << "min_index: " << min_index << std::endl;
     return min_index;  //返回最匹配的帧id,且该帧是比较旧的
   } else
     return -1;
@@ -361,8 +366,6 @@ void PoseGraph::addKeyFrameIntoVoc(KeyFrame* keyframe) {
     putText(compressed_image, "feature_num:" + to_string(feature_num), cv::Point2f(10, 10), CV_FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255));
     image_pool[keyframe->index] = compressed_image;
   }
-
-//TODO youfang  不添加进数据库
   db.add(keyframe->brief_descriptors);
 }
 
@@ -452,13 +455,17 @@ void PoseGraph::optimize4DoF() {
 
         // add loop edge 回环约束
         if ((*it)->has_loop) {
-          // TODO youfang
           assert((*it)->loop_index >= first_looped_index);                    //要回环的id 做什么???
+
           int connected_index = getKeyFrame((*it)->loop_index)->local_index;  //若是该帧产生了回环,对应的回环帧在前面已经添加了local_index
           Vector3d euler_conncected = Utility::R2ypr(q_array[connected_index].toRotationMatrix());
+          // printf("connected_index %d\n", connected_index);
+          // printf("loop_index %d\n", (*it)->loop_index);
           Vector3d relative_t;
           relative_t = (*it)->getLoopRelativeT();
           double relative_yaw = (*it)->getLoopRelativeYaw();
+          // std::cout << "relative_yaw: " << relative_yaw << std::endl;
+          // std::cout << "relative_t: " << relative_t.transpose() << std::endl;
           ceres::CostFunction* cost_function = FourDOFWeightError::Create(relative_t.x(), relative_t.y(), relative_t.z(), relative_yaw, euler_conncected.y(), euler_conncected.z());
           problem.AddResidualBlock(cost_function, loss_function, euler_array[connected_index], t_array[connected_index], euler_array[i], t_array[i]);
         }
@@ -790,7 +797,7 @@ void PoseGraph::savePoseGraphProto() {
     Quaterniond PG_tmp_Q{(*it)->R_w_i};
     Vector3d PG_tmp_T = (*it)->T_w_i;
 
-    PoseProto *pose = frame->mutable_frame_pose();
+    PoseProto* pose = frame->mutable_frame_pose();
     pose->set_x(PG_tmp_T.x());
     pose->set_y(PG_tmp_T.y());
     pose->set_z(PG_tmp_T.z());
@@ -814,7 +821,7 @@ void PoseGraph::savePoseGraphProto() {
 }
 void PoseGraph::loadPoseGraphProto() {
   TicToc tmp_t;
-  int cnt = 0;
+  int load_frame_cnt = 0; //统计加载地图的帧数,优化时不对这部分frmae list 优化//还是说也将地图一起优化了???
   string file_path = POSE_GRAPH_SAVE_PATH + "pose_graph.pb";
   printf("pose graph Protobuf loading...\n");
 
@@ -839,12 +846,13 @@ void PoseGraph::loadPoseGraphProto() {
 
   for (int i = 0; i < map_in.frames_size(); i++) {
     FrameProto frame = map_in.frames(i);
-    loop_index=frame.loop_index();
+    loop_index = frame.loop_index();
 
-    if (loop_index != -1)
-      if (earliest_loop_index > loop_index || earliest_loop_index == -1) {
-        earliest_loop_index = loop_index;
-      }
+    // if (loop_index != -1)
+    //   if (earliest_loop_index > loop_index || earliest_loop_index == -1) {
+    //     earliest_loop_index = loop_index;
+    //   }
+    loop_index=-1; //默认所有加载帧都没回环
     index = frame.frame_id();
 
     PG_Tx = frame.frame_pose().x();
@@ -889,11 +897,11 @@ void PoseGraph::loadPoseGraphProto() {
 
     //并不需要 vio
     KeyFrame* keyframe = new KeyFrame(index, PG_T, PG_R, loop_index, keypoints, keypoints_norm, brief_descriptors);
-    loadKeyFrame(keyframe, 0);
-    if (cnt % 2 == 0) {
+    loadKeyFrame(keyframe, 0);  //不进行回环检测
+    if (load_frame_cnt % 2 == 0) {
       publish();
     }
-    cnt++;
+    load_frame_cnt++;
   }
 }
 void PoseGraph::savePoseGraph() {

@@ -56,6 +56,9 @@ int VISUALIZATION_SHIFT_Y;
 int ROW;
 int COL;
 int DEBUG_IMAGE;
+int ADD_DATA_BASE;
+int MIN_LOOP_NUM;
+int FAST_TH;
 
 camodocal::CameraPtr m_camera;
 Eigen::Vector3d tic;
@@ -407,6 +410,11 @@ int main(int argc, char **argv) {
   fsSettings["pose_graph_save_path"] >> POSE_GRAPH_SAVE_PATH;
   fsSettings["output_path"] >> VINS_RESULT_PATH;
   fsSettings["save_image"] >> DEBUG_IMAGE;
+  fsSettings["add_data_base"] >> ADD_DATA_BASE;
+  fsSettings["min_loop_num"] >> MIN_LOOP_NUM;
+  fsSettings["fast_th"] >> FAST_TH;
+  
+  
 
   LOAD_PREVIOUS_POSE_GRAPH = fsSettings["load_previous_pose_graph"];
   VINS_RESULT_PATH = VINS_RESULT_PATH + "/vio_loop.csv";

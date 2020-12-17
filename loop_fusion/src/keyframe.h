@@ -29,7 +29,6 @@
 #include "ThirdParty/DBoW/DBoW2.h"
 #include "ThirdParty/DVision/DVision.h"
 
-#define MIN_LOOP_NUM 25
 
 using namespace Eigen;
 using namespace std;

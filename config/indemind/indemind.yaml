@@ -4,8 +4,8 @@
 #support: 1 imu 1 cam; 1 imu 2 cam: 2 cam; 
 
 imu: 1       
-num_of_stereo_cam: 0
-num_of_mono_cam:   1
+num_of_stereo_cam: 1
+num_of_mono_cam:   0
 
 imu_topic:    "/indemind/imu"
 image0_topic: "/indemind/left/image"
@@ -54,7 +54,7 @@ fish_eye_mask_radius: 0 # 自动生成
 #fish_eye_mask_path: "/home/jon/code/ubt_code/mult_mono_vins/vins_mult_ws/src/VINS-Fusion/config/mask.jpg"
 
 #feature traker paprameters
-max_cnt: 100            # max feature number in feature tracking
+max_cnt: 70            # max feature number in feature tracking
 min_dist: 20            # min distance between two features 
 #min_dist: 20           # min distance between two features 
 freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
@@ -63,25 +63,29 @@ show_track: 1           # publish tracking image as topic
 flow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
 
 #optimization parameters
-max_solver_time: 0.01   # max solver itration time (ms), to guarantee real time
-max_num_iterations: 4   # max solver itrations, to guarantee real time
+max_solver_time: 0.02   # max solver itration time (ms), to guarantee real time
+max_num_iterations: 6   # max solver itrations, to guarantee real time
 keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
 
 #imu parameters       The more accurate parameters you provide, the better performance
-acc_n: 0.04         # accelerometer measurement noise standard deviation. #0.2   0.04
+acc_n: 0.2  #0.2         # accelerometer measurement noise standard deviation. #0.2   0.04
 gyr_n: 0.01         # gyroscope measurement noise standard deviation.     #0.05  0.004
-acc_w: 0.01       # accelerometer bias random work noise standard deviation.  #0.02
-gyr_w: 0.001       # gyroscope bias random work noise standard deviation.     #4.0e-5
-g_norm: 9.84         # gravity magnitude
+acc_w: 0.001       # accelerometer bias random work noise standard deviation.  #0.02
+gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.     #4.0e-5
+g_norm: 9.8015         # gravity magnitude
 
 #unsynchronization parameters
 estimate_td: 1                      # online estimate time offset between camera and imu
-td: -0.005  # -0.007230                  # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
+td: -0.002  # -0.007230                  # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
 
 #loop closure parameters
-load_previous_pose_graph: 1         # load and reuse previous pose graph; load from 'pose_graph_save_path'
-pose_graph_save_path: "/home/jon/code/data/616/"    # save and load path
+load_previous_pose_graph: 1        # load and reuse previous pose graph; load from 'pose_graph_save_path'
+pose_graph_save_path: "/home/jon/code/data/1217/"    # save and load path
 save_image: 0                       # save image in pose graph for visualization prupose; you can close this function by setting 0 
+add_data_base: 0            #检测回环时是否将当前帧加入到数据库中
+min_loop_num: 10              # 匹配上的特征点, 后面还会进行pnp剔除
+fast_th:  10                  # 20 ~ 300个 10 ~ 500个
+
 
 #line
 use_line: 0

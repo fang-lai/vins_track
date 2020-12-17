@@ -33,5 +33,9 @@ extern int ROW;
 extern int COL;
 extern std::string VINS_RESULT_PATH;
 extern int DEBUG_IMAGE;
+extern int ADD_DATA_BASE;
+extern int MIN_LOOP_NUM;
+extern int FAST_TH;
+
 
 
